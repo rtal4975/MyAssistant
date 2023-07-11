@@ -1,0 +1,184 @@
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  labels:
+    jenkins/jenkins-jenkins-slave: "true"
+    jenkins/label: "jenkins-node-jnlp-kaniko"
+  name: "jenkins-node-jnlp-kaniko"
+spec:
+  containers:
+  - name: "kaniko"
+    image: "gcr.io/kaniko-project/executor:debug"
+    imagePullPolicy: "IfNotPresent"
+    command:
+    - "/busybox/cat"
+    env:
+    - name: "GIT_COMMITTER_NAME"
+      value: "Jenkins"
+    - name: "GIT_COMMITTER_EMAIL"
+      value: "jenkins@suppliesonthefly.com"
+    - name: "JENKINS_URL"
+      value: "http://jenkins.jenkins.svc.cluster.local:8080"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests: {}
+    securityContext:
+      privileged: false
+      runAsGroup: 0
+      runAsUser: 0
+    tty: true
+    volumeMounts:
+    - mountPath: "/gen-source"
+      name: "volume-0"
+      readOnly: false
+    - mountPath: "/kaniko/.docker"
+      name: "volume-1"
+      readOnly: false
+    - mountPath: "/tmp"
+      name: "volume-3"
+      readOnly: false
+    - mountPath: "/tmp/jenkins"
+      name: "workspace-volume"
+      readOnly: false
+    workingDir: "/tmp"
+  - name: "argocd-cli"
+    image: "syscobt-sotf-docker.jfrog.io/argocd/argocd-cli:openshift4"
+    args:
+    - "cat"
+    command:
+    - "/bin/sh"
+    - "-c"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests: {}
+    securityContext:
+      privileged: false
+    tty: true
+    volumeMounts:
+    - mountPath: "/tmp/jenkins"
+      name: "workspace-volume"
+      readOnly: false
+    workingDir: "/tmp/jenkins"
+  - name: "kustomize"
+    image: "syscobt-sotf-docker.jfrog.io/kustomize/kustomize:latest"
+    args:
+    - "cat"
+    command:
+    - "/bin/sh"
+    - "-c"
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests: {}
+    securityContext:
+      privileged: false
+    tty: true
+    volumeMounts:
+    - mountPath: "/tmp/jenkins"
+      name: "workspace-volume"
+      readOnly: false
+    workingDir: "/tmp/jenkins"
+  - name: "jnlp"
+    image: "syscobt-sotf-docker.jfrog.io/jenkins/jenkins-node-agent:4.10-3"
+    imagePullPolicy: "IfNotPresent"
+    env:
+    - name: "GIT_COMMITTER_EMAIL"
+      value: "jenkins@suppliesonthefly.com"
+    - name: "GIT_COMMITTER_NAME"
+      value: "Jenkins"
+    - name: "GIT_SSL_NO_VERIFY"
+      value: "true"
+    resources:
+      limits:
+        memory: "512Mi"
+        cpu: "1000m"
+      requests:
+        memory: "512Mi"
+        cpu: "512m"
+    securityContext:
+      privileged: false
+    tty: false
+    volumeMounts:
+    - mountPath: "/gen-source"
+      name: "volume-0"
+      readOnly: false
+    - mountPath: "/kaniko/.docker"
+      name: "volume-1"
+      readOnly: false
+    - mountPath: "/usr/share/nvd"
+      name: "volume-2"
+      readOnly: false
+    - mountPath: "/tmp"
+      name: "volume-3"
+      readOnly: false
+    - mountPath: "/tmp/jenkins"
+      name: "workspace-volume"
+      readOnly: false
+    workingDir: "/tmp/jenkins"
+  - name: "s2i"
+    image: "quay.io/openshift-pipeline/s2i"
+    imagePullPolicy: "IfNotPresent"
+    args:
+    - "cat"
+    command:
+    - "/bin/sh"
+    - "-c"
+    env:
+    - name: "GIT_COMMITTER_NAME"
+      value: "Jenkins"
+    - name: "GIT_COMMITTER_EMAIL"
+      value: "jenkins@suppliesonthefly.com"
+    - name: "JENKINS_URL"
+      value: "http://jenkins.jenkins.svc.cluster.local:8080"
+    - name: "GIT_SSL_NO_VERIFY"
+      value: "true"     
+    resources:
+      limits: 
+        cpu: 100m
+        memory: 512Mi
+      requests: {}
+    securityContext:
+      privileged: false
+    tty: true
+    volumeMounts:
+    - mountPath: "/gen-source"
+      name: "volume-0"
+      readOnly: false
+    - mountPath: "/tmp"
+      name: "volume-3"
+      readOnly: false
+    - mountPath: "/tmp/jenkins"
+      name: "workspace-volume"
+      readOnly: false
+    workingDir: "/tmp/jenkins"
+  hostNetwork: false
+  nodeSelector:
+    kubernetes.io/os: "linux"
+  restartPolicy: "Never"
+  securityContext:
+    runAsGroup: 1000
+    runAsUser: 1000
+    fsGroup: 1000
+  serviceAccount: "jenkins"
+  volumes:
+  - emptyDir:
+      medium: ""
+    name: "volume-0"
+  - name: "volume-2"
+    persistentVolumeClaim:
+      claimName: "dependency-cache"
+      readOnly: false
+  - name: "volume-1"
+    secret:
+      secretName: "syscobt-sotf-artifactory-docker"
+  - emptyDir:
+      medium: ""
+    name: "workspace-volume"
+  - emptyDir:
+      medium: ""
+    name: "volume-3"
