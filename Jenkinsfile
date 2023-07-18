@@ -45,7 +45,7 @@ stage('Push To Prod GPU Node') {
       stage('Push To Prod GPU Node - Bphdp107') {
         steps{
             script {
-              withCredentials([usernamePassword(credentialsId: 'bphdp107-spark-app-user-creds', passwordVariable: 'sshPwd', usernameVariable: 'userName')]){
+              withCredentials([usernamePassword(credentialsId: 'sotf-server-spark-app-creds', passwordVariable: 'sshPwd', usernameVariable: 'userName')]){
               def remote = [:]
               remote.name = 'bphdp107'
               remote.host = 'bphdp107.corp.instawares.com'
@@ -76,7 +76,7 @@ git log --pretty=format:'%H' -n 1 HEAD
       stage('Push To Prod GPU Node - Bphdp109') {
         steps{
             script {
-              withCredentials([usernamePassword(credentialsId: 'bphdp109-spark-app-user-creds', passwordVariable: 'sshPwd', usernameVariable: 'userName')]){
+              withCredentials([usernamePassword(credentialsId: 'sotf-server-spark-app-creds', passwordVariable: 'sshPwd', usernameVariable: 'userName')]){
               def remote = [:]
               remote.name = 'bphdp109'
               remote.host = 'bphdp109.corp.instawares.com'
