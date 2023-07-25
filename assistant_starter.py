@@ -23,6 +23,7 @@ import subprocess
 
 ### methods
 def find_git_dir(starting_path):
+    starting_path = os.path.abspath(starting_path)
     if not os.path.isdir(starting_path):
         starting_path = os.path.dirname(starting_path)
     dir = starting_path
@@ -34,7 +35,7 @@ def find_git_dir(starting_path):
         else:
             # check parent directory
             dir = os.path.dirname(dir)
-            if (dir == "/") or (dir == "/home") or (dir == "/user") or (dir == "/users"):
+            if (dir == "/") or (dir == "/home") or (dir == "/user") or (dir == "/users") or (dir is None):
                 # FAILED. no point in checking higher
                 break
     
