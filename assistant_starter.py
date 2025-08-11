@@ -254,6 +254,6 @@ class SOTFAssistant():
         if self.testing:
             self.current_run_tag += "_TEST%03i" % self.current_test_number
 
-        time_tag = time.strftime("%Y%m%d%H%M%S")
-        self.current_run_tag += "_%s" % time_tag
+        self.time_tag = time.strftime("%Y%m%d%H%M%S")
+        self.current_run_tag += "_%s" % self.time_tag
         self.current_run_output_folder = os.path.join(self.parent_output_dir, self.current_run_tag)
