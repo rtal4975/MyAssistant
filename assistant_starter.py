@@ -19,6 +19,8 @@ import time
 import inspect
 import logging
 import subprocess
+from input_with_timeout import input_with_timeout #  python -m pip install input-with-timeout
+import pdb
 
 
 ### methods
@@ -82,8 +84,9 @@ class SOTFAssistant():
     6) Make new directory and write meta file + codediff file
         * use logging or just use assistant to write to this file?...ya just go with logging...better in long run
     '''
-    def __init__(self, runfile, relative_parent_output_dir="./output", using_git=True, testing=False):
+    def __init__(self, runfile, relative_parent_output_dir="./output", using_git=True, testing=False, fast=False):
         self.testing = testing
+        self.fast = fast
 
         # 1) Establish repo-directory + output-parent-directory
         if using_git:
@@ -119,7 +122,10 @@ class SOTFAssistant():
 
     def start(self):
         # 5) Interact with the user
-        run_description = self.checkin_with_user()
+        if not self.fast:
+            run_description = self.checkin_with_user()
+        else:
+            run_description = "---- SKIPPED BY USER ----"
 
         # 6) Make new directory and write meta file + codediff file
         os.makedirs(self.current_run_output_folder, exist_ok=True)
@@ -151,11 +157,21 @@ class SOTFAssistant():
         print("\nASSISTANT: Since the last commit, %i files changed, %i lines added, %i lines removed." % (num_files_changed, lines_added, lines_removed))
 
         if (num_files_changed >= 5) or (lines_added+lines_removed >= 200):
-            response = input("  Looks like you've made quite a few changes since your last commit. I recommend you exit and commit the changes; would you like to do that? (y/n) ... ")
-            if response.lower() == 'y':
-                raise Exception("\nASSISTANT: EXITING so that the user can `add` and `commit` their changes.")
+            try:
+                response = input_with_timeout("  Looks like you've made quite a few changes since your last commit. I recommend you exit and commit the changes; would you like to do that? (y/n) ... ",
+                                            timeout=30)
+                if response.lower() in ['y','exit','quit']:
+                    raise Exception("\nASSISTANT: EXITING so that the user can `add` and `commit` their changes.")
+            except TimeoutError:
+                # user didn't answer so assume we can move along
+                pass
+
+        try:
+            run_description = input_with_timeout("\nASSISTANT: Help with documentation by writing a few words describing your current run:\n--> ",
+                                                timeout=60)
+        except TimeoutError:
+            run_description = "warning: user didn't give a response to the run's description"
         
-        run_description = input("\nASSISTANT: Help with documentation by writing a few words describing your current run:\n--> ")
         return run_description
     
 
